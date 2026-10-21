@@ -57,6 +57,9 @@ that talks to the database directly is a second, unguarded way into your data: n
 - adding, renaming or removing an MCP tool
 - changing a coverage threshold
 - sending user data to a third-party model
+- bypassing or modifying event capacity enforcement rules
+- changing OAuth account linking or OTP verification rules
+- cascading deletion or direct modification of user registrations
 
 ## Never
 - commit secrets, passwords, API keys or an OAuth client secret

@@ -68,6 +68,11 @@ Club events
 - [AC-10] After signing in with a seeded account, `/events` shows the three seeded events, each with its title, date and number of free places.
 - [AC-11] Deleting one event row in the database and reloading `/events` reduces the displayed event count by one.
 
+### Slice 2: organizer updates an event
+- [AC-12] An organizer who attempts to update an event capacity to a number lower than its current registrations is refused with `400`, and neither the capacity nor the registrations in the database are changed.
+- [AC-13] An organizer who attempts to set an event date to a past date sees an error message stating the date has already passed, the request is refused with `400`, and the event date remains unchanged in the database.
+- [AC-14] An organizer who attempts to edit an event they do not own is refused with `403` and no changes occur in the database.
+
 ## Traceability
 <!-- Filled in from Exercise 3 onward: each AC id, and the test that names it. -->
 | Criterion | Test |
