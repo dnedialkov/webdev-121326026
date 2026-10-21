@@ -54,6 +54,13 @@ async function updateExistingEvent(userId, eventId, title, description, date, ca
   if (event.organizer_id !== userId) {
     return { success: false, status: 403, error: 'Forbidden' };
   }
+  if (new Date(date) < new Date()) {
+    return { success: false, status: 400, error: 'Event date cannot be in the past' };
+  }
+  const currentRegistrationsCount = Number(event.capacity) - Number(event.free_places);
+  if (capacity < currentRegistrationsCount) {
+    return { success: false, status: 400, error: 'Capacity cannot be less than current registrations' };
+  }
   const updated = await eventRepo.updateEvent(eventId, title, description, date, capacity);
   return { success: true, event: updated };
 }
