@@ -5,4 +5,3 @@ One row per agent session. In Gemini CLI, type `/stats` before you quit and copy
 | Date | Tool | Input tokens | Output tokens | Credits (if no tokens) | List-price cost |
 |---|---|---|---|---|---|
 | 2026-10-21 | Gemini CLI (`gemini-3.5-flash-lite`; 10,144 cache reads) | 26,687 | 84 |  |  |
-│    ↳ main                           2             0             0             0          
