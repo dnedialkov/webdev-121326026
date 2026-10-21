@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upcoming Events - Club Events</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #f4f4f9; margin: 0; padding: 2rem; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 1rem; margin-bottom: 2rem; }
+        h1 { margin: 0; color: #333; }
+        .user-info { color: #666; }
+        a.btn, button.btn { background: #007bff; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; text-decoration: none; cursor: pointer; font-size: 0.9rem; display: inline-block; }
+        a.btn:hover, button.btn:hover { opacity: 0.9; }
+        .btn-success { background: #28a745; }
+        .btn-danger { background: #dc3545; }
+        .btn-disabled { background: #6c757d; cursor: not-allowed; }
+        .event-card { background: #fdfdfd; border: 1px solid #e1e4e8; border-radius: 6px; padding: 1.5rem; margin-bottom: 1rem; }
+        .event-title { font-size: 1.25rem; font-weight: bold; color: #24292e; margin-top: 0; }
+        .event-meta { color: #586069; font-size: 0.9rem; margin-bottom: 0.5rem; }
+        .event-desc { color: #333; margin-bottom: 1rem; }
+        .error-msg { color: #721c24; background: #f8d7da; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; border: 1px solid #f5c6cb; }
+        .success-msg { color: #155724; background: #d4edda; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; border: 1px solid #c3e6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Upcoming Events</h1>
+                <span class="user-info">Signed in as <strong>{{user_email}}</strong> ({{user_role}})</span>
+            </div>
+            <div>
+                <a href="/logout" class="btn btn-danger">Sign Out</a>
+            </div>
+        </header>
+
+        <main>
+            {{message_html}}
+            {{organizer_actions_html}}
+            {{events_list_html}}
+        </main>
+    </div>
+</body>
+</html>

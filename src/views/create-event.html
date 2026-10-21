@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Event - Club Events</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h1 { margin-top: 0; font-size: 1.5rem; color: #333; text-align: center; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; color: #555; }
+        input, textarea { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        textarea { resize: vertical; height: 100px; }
+        button { width: 100%; padding: 0.75rem; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; }
+        button:hover { background: #218838; }
+        .error { color: #dc3545; background: #f8d7da; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; text-align: center; }
+        .back { text-align: center; margin-top: 1rem; }
+        .back a { color: #007bff; text-decoration: none; }
+        .back a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Create New Event</h1>
+        {{error_html}}
+        <form action="/events" method="POST">
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="date">Date & Time</label>
+                <input type="datetime-local" id="date" name="date" required>
+            </div>
+            <div class="form-group">
+                <label for="capacity">Capacity (places limit)</label>
+                <input type="number" id="capacity" name="capacity" min="1" required>
+            </div>
+            <button type="submit">Publish Event</button>
+        </form>
+        <div class="back">
+            <a href="/events">← Back to Events</a>
+        </div>
+    </div>
+</body>
+</html>

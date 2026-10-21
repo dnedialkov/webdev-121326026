@@ -3,19 +3,18 @@
 Read this file at the start of every session. Keep it short and correct; update it when the project changes.
 
 ## Project
-<!-- One or two sentences: what the app does and for whom. Link SPEC.md. -->
-See `SPEC.md` for goals, non-goals and acceptance criteria.
+A student club events web application where members browse upcoming events, sign up, and cancel registrations, and organizers create and edit events with limited capacity. See `SPEC.md`.
 
 ## Commands
 <!-- How to install, run, test. Keep these exact and working. -->
-- Install: 
-- Run: 
-- Test: 
-- Coverage: 
-- MCP server: 
+- Install: npm install
+- Run: npm start
+- Test: npm test
+- Coverage: npm run coverage
+- MCP server: npm run --silent mcp
 
 ## Conventions
-<!-- Folder layout, naming, where business rules live, how errors are returned to the client. -->
+Source code lives in `src/` and `mcp-server/`. Business rules live in service layer modules (`src/services/`). Errors are returned as HTTP status codes by route handlers.
 
 ## Layers
 <!-- Fill in the file or folder for each layer. -->
