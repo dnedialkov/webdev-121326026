@@ -136,6 +136,30 @@ router.post('/events', async (req, res) => {
   }
 });
 
+router.post('/events/:id', async (req, res) => {
+  if (!req.session || !req.session.user) {
+    return res.status(401).send('Unauthorized');
+  }
+  try {
+    const { title, description, date, capacity } = req.body;
+    const result = await eventService.updateExistingEvent(
+      req.session.user.id,
+      req.params.id,
+      title,
+      description,
+      date,
+      parseInt(capacity, 10)
+    );
+    if (!result.success) {
+      return res.status(result.status || 400).send(result.error);
+    }
+    res.redirect('/events?success=' + encodeURIComponent('Event updated successfully'));
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 router.post('/events/:id/signup', async (req, res) => {
   if (!req.session || !req.session.user) {
     return res.redirect('/login');
