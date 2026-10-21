@@ -5,6 +5,10 @@ async function listUpcomingEvents() {
   return events;
 }
 
+async function getEventById(eventId) {
+  return await eventRepo.getEventById(eventId);
+}
+
 async function getUserRegistrations(userId) {
   return await eventRepo.getUserRegistrations(userId);
 }
@@ -79,6 +83,7 @@ async function removeEvent(userId, eventId) {
 
 module.exports = {
   listUpcomingEvents,
+  getEventById,
   getUserRegistrations,
   signupForEvent,
   cancelRegistration,

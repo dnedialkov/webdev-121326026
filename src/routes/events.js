@@ -6,6 +6,7 @@ const path = require('path');
 
 const eventsHtmlPath = path.join(__dirname, '../views/events.html');
 const createEventHtmlPath = path.join(__dirname, '../views/create-event.html');
+const editEventHtmlPath = path.join(__dirname, '../views/edit-event.html');
 
 router.get('/events', async (req, res) => {
   if (!req.session || !req.session.user) {
@@ -74,9 +75,12 @@ router.get('/events', async (req, res) => {
           }
         } else if (req.session.user.role === 'organizer' && isOwner) {
           actionButton = `
-            <form action="/events/${event.id}/delete" method="POST" style="margin-top: 1rem;">
-              <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this event?');">Delete Event</button>
-            </form>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+              <a href="/events/${event.id}/edit" class="btn" style="background: #17a2b8;">Edit Event</a>
+              <form action="/events/${event.id}/delete" method="POST" style="margin: 0;">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this event?');">Delete Event</button>
+              </form>
+            </div>
           `;
         }
 
@@ -111,6 +115,30 @@ router.get('/events/new', (req, res) => {
   const errorHtml = error ? `<div class="error">${escapeHtml(error)}</div>` : '';
   html = html.replace('{{error_html}}', errorHtml);
   res.send(html);
+});
+
+router.get('/events/:id/edit', (req, res) => {
+  if (!req.session || !req.session.user || req.session.user.role !== 'organizer') {
+    return res.status(403).send('Forbidden');
+  }
+  let html = fs.readFileSync(editEventHtmlPath, 'utf8');
+  res.send(html);
+});
+
+router.get('/api/events/:id', async (req, res) => {
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const event = await eventService.getEventById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    res.json(event);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
 
 router.post('/events', async (req, res) => {
