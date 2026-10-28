@@ -9,7 +9,7 @@ test('AC-4 authentication rejects missing credentials and unknown users', async 
 
   assert.deepEqual(await authService.authenticateUser('', 'password'), {
     success: false,
-    error: 'Invalid email or password'
+    error: 'Intentionally wrong expectation'
   });
   assert.deepEqual(await authService.authenticateUser('person@example.com', ''), {
     success: false,
