@@ -1,126 +1,120 @@
 const test = require('node:test');
-const assert = require('node:assert');
+const assert = require('node:assert/strict');
 const app = require('../server');
+const authService = require('../services/authService');
 const eventService = require('../services/eventService');
 
-test('AC-12 API updating event capacity lower than registrations returns 400', async () => {
+async function startServer(t) {
   const server = app.listen(0);
-  const port = server.address().port;
-  const baseUrl = `http://localhost:${port}`;
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  return `http://localhost:${server.address().port}`;
+}
 
-  const loginRes = await fetch(`${baseUrl}/login`, {
+async function login(baseUrl, authenticate, user) {
+  authenticate.mock.mockImplementation(async () => ({ success: true, user }));
+  const response = await fetch(`${baseUrl}/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ email: 'organizer@club.com', password: 'password123' }),
+    body: new URLSearchParams({ email: user.email, password: 'password123' }),
     redirect: 'manual'
   });
-  const cookie = loginRes.headers.get('set-cookie');
+  assert.equal(response.status, 302);
+  return response.headers.get('set-cookie').split(';')[0];
+}
 
-  const originalUpdate = eventService.updateExistingEvent;
-  eventService.updateExistingEvent = async () => ({
+test('AC-12 API updating event capacity lower than registrations returns 400', async (t) => {
+  const baseUrl = await startServer(t);
+  const authenticate = t.mock.method(authService, 'authenticateUser', async () => ({ success: false }));
+  const update = t.mock.method(eventService, 'updateExistingEvent', async () => ({
     success: false,
     status: 400,
     error: 'Capacity cannot be less than current registrations'
+  }));
+  const cookie = await login(baseUrl, authenticate, {
+    id: 10,
+    email: 'organizer@club.com',
+    role: 'organizer'
   });
 
-  const updateRes = await fetch(`${baseUrl}/events/1`, {
+  const response = await fetch(`${baseUrl}/events/1`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'Cookie': cookie
+      Cookie: cookie
     },
-    body: new URLSearchParams({ title: 'Updated', capacity: '1' })
-  });
-
-  server.close();
-  eventService.updateExistingEvent = originalUpdate;
-
-  assert.strictEqual(updateRes.status, 400);
-});
-
-test('AC-14 API updating non-owned event returns 403', async () => {
-  const server = app.listen(0);
-  const port = server.address().port;
-  const baseUrl = `http://localhost:${port}`;
-
-  const loginRes = await fetch(`${baseUrl}/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ email: 'organizer@club.com', password: 'password123' }),
+    body: new URLSearchParams({ title: 'Updated', capacity: '1' }),
     redirect: 'manual'
   });
-  const cookie = loginRes.headers.get('set-cookie');
 
-  const originalUpdate = eventService.updateExistingEvent;
-  eventService.updateExistingEvent = async () => ({
+  assert.equal(response.status, 400);
+  assert.deepEqual(update.mock.calls[0].arguments.slice(0, 2), [10, '1']);
+});
+
+test('AC-14 API updating a non-owned event returns 403', async (t) => {
+  const baseUrl = await startServer(t);
+  const authenticate = t.mock.method(authService, 'authenticateUser', async () => ({ success: false }));
+  const update = t.mock.method(eventService, 'updateExistingEvent', async () => ({
     success: false,
     status: 403,
     error: 'Forbidden'
+  }));
+  const cookie = await login(baseUrl, authenticate, {
+    id: 10,
+    email: 'organizer@club.com',
+    role: 'organizer'
   });
 
-  const updateRes = await fetch(`${baseUrl}/events/1`, {
+  const response = await fetch(`${baseUrl}/events/1`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'Cookie': cookie
+      Cookie: cookie
     },
-    body: new URLSearchParams({ title: 'Updated', capacity: '10' })
-  });
-
-  server.close();
-  eventService.updateExistingEvent = originalUpdate;
-
-  assert.strictEqual(updateRes.status, 403);
-});
-
-test('API updating event without session returns 401', async () => {
-  const server = app.listen(0);
-  const port = server.address().port;
-  const baseUrl = `http://localhost:${port}`;
-
-  const updateRes = await fetch(`${baseUrl}/events/1`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: new URLSearchParams({ title: 'Updated', capacity: '10' })
-  });
-
-  server.close();
-  assert.strictEqual(updateRes.status, 401);
-});
-
-test('AC-14 API updating event as non-owner returns 403', async () => {
-  const server = app.listen(0);
-  const port = server.address().port;
-  const baseUrl = `http://localhost:${port}`;
-
-  const loginRes = await fetch(`${baseUrl}/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ email: 'member@club.com', password: 'password123' }),
+    body: new URLSearchParams({ title: 'Updated', capacity: '10' }),
     redirect: 'manual'
   });
-  const cookie = loginRes.headers.get('set-cookie');
 
-  const originalUpdate = eventService.updateExistingEvent;
-  eventService.updateExistingEvent = async () => ({
+  assert.equal(response.status, 403);
+  assert.equal(update.mock.callCount(), 1);
+});
+
+test('API updating an event without a session returns 401', async (t) => {
+  const baseUrl = await startServer(t);
+
+  const response = await fetch(`${baseUrl}/events/1`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ title: 'Updated', capacity: '10' }),
+    redirect: 'manual'
+  });
+
+  assert.equal(response.status, 401);
+});
+
+test('AC-14 API updating an event as a non-owner returns 403', async (t) => {
+  const baseUrl = await startServer(t);
+  const authenticate = t.mock.method(authService, 'authenticateUser', async () => ({ success: false }));
+  const update = t.mock.method(eventService, 'updateExistingEvent', async () => ({
     success: false,
     status: 403,
     error: 'Forbidden'
+  }));
+  const cookie = await login(baseUrl, authenticate, {
+    id: 11,
+    email: 'member@club.com',
+    role: 'member'
   });
 
-  const updateRes = await fetch(`${baseUrl}/events/1`, {
+  const response = await fetch(`${baseUrl}/events/1`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'Cookie': cookie
+      Cookie: cookie
     },
-    body: new URLSearchParams({ title: 'Updated', capacity: '10' })
+    body: new URLSearchParams({ title: 'Updated', capacity: '10' }),
+    redirect: 'manual'
   });
 
-  server.close();
-  eventService.updateExistingEvent = originalUpdate;
-
-  assert.strictEqual(updateRes.status, 403);
+  assert.equal(response.status, 403);
+  assert.equal(update.mock.callCount(), 1);
 });
