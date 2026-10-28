@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node src/server.js",
     "test": "node --test src/**/*.test.js",
+    "coverage": "node --test --experimental-test-coverage --test-coverage-include='src/services/**' --test-coverage-exclude='src/**/*.test.js' --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 && node --test --experimental-test-coverage --test-coverage-include='src/**' --test-coverage-exclude='src/**/*.test.js' --test-coverage-lines=80",
     "mcp": "node mcp-server/server.js"
   },
   "repository": {
