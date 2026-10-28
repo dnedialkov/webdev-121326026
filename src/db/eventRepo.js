@@ -52,14 +52,10 @@ async function signupTransaction(userId, eventId) {
   try {
     await client.query('BEGIN');
 
-    const eventResult = await client.query(`
-      SELECT e.id, e.capacity, COUNT(r.id) AS reg_count
-      FROM events e
-      LEFT JOIN registrations r ON e.id = r.event_id
-      WHERE e.id = $1
-      GROUP BY e.id
-      FOR UPDATE
-    `, [eventId]);
+    const eventResult = await client.query(
+      'SELECT id, capacity FROM events WHERE id = $1 FOR UPDATE',
+      [eventId]
+    );
 
     if (eventResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -67,7 +63,11 @@ async function signupTransaction(userId, eventId) {
     }
 
     const event = eventResult.rows[0];
-    const freePlaces = Number(event.capacity) - Number(event.reg_count);
+    const registrationCountResult = await client.query(
+      'SELECT COUNT(*) AS reg_count FROM registrations WHERE event_id = $1',
+      [eventId]
+    );
+    const freePlaces = Number(event.capacity) - Number(registrationCountResult.rows[0].reg_count);
 
     const regResult = await client.query(
       'SELECT * FROM registrations WHERE user_id = $1 AND event_id = $2',

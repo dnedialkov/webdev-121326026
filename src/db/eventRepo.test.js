@@ -48,9 +48,12 @@ test('signup transaction handles missing, duplicate, full, successful, and faile
         const normalizedSql = sql.trim();
         calls.push(normalizedSql.split(/\s+/).slice(0, 3).join(' '));
         if (normalizedSql === 'BEGIN') return { rows: [] };
-        if (normalizedSql.startsWith('SELECT e.id')) {
+        if (normalizedSql.startsWith('SELECT id, capacity FROM events')) {
           if (scenario.fail) throw new Error('query failed');
           return { rows: scenario.event ? [scenario.event] : [] };
+        }
+        if (normalizedSql.startsWith('SELECT COUNT(*) AS reg_count FROM registrations')) {
+          return { rows: [{ reg_count: scenario.event?.reg_count ?? 0 }] };
         }
         if (normalizedSql.startsWith('SELECT * FROM registrations')) {
           return { rows: scenario.registration ? [scenario.registration] : [] };
@@ -94,6 +97,13 @@ test('signup transaction handles missing, duplicate, full, successful, and faile
     registration: { user_id: 7, event_id: 1 }
   });
   assert.ok(clients.at(-1).calls.includes('COMMIT'));
+  const successfulClient = clients.at(-1);
+  assert.deepEqual(successfulClient.calls.slice(0, 3), [
+    'BEGIN',
+    'SELECT id, capacity',
+    'SELECT COUNT(*) AS'
+  ]);
+  assert.ok(!successfulClient.calls.some((query) => query.includes('GROUP BY')));
 
   scenario = { fail: true };
   await assert.rejects(eventRepo.signupTransaction(7, 1), /query failed/);
