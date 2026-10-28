@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const { randomBytes } = require('crypto');
 const userRepo = require('../db/userRepo');
 
 async function authenticateUser(email, password) {
@@ -43,7 +44,42 @@ async function registerUser(email, password, role = 'member') {
   return { success: true, user: newUser };
 }
 
+async function authenticateGoogleUser(email) {
+  if (!email) {
+    throw new Error('A verified Google email is required');
+  }
+
+  const existingUser = await userRepo.findByEmail(email);
+  if (existingUser) {
+    return {
+      id: existingUser.id,
+      email: existingUser.email,
+      role: existingUser.role
+    };
+  }
+
+  const passwordHash = await bcrypt.hash(randomBytes(32).toString('hex'), 10);
+  try {
+    return await userRepo.createUser(email, passwordHash, 'member');
+  } catch (error) {
+    if (error.code !== '23505') {
+      throw error;
+    }
+
+    const userCreatedConcurrently = await userRepo.findByEmail(email);
+    if (!userCreatedConcurrently) {
+      throw error;
+    }
+    return {
+      id: userCreatedConcurrently.id,
+      email: userCreatedConcurrently.email,
+      role: userCreatedConcurrently.role
+    };
+  }
+}
+
 module.exports = {
   authenticateUser,
-  registerUser
+  registerUser,
+  authenticateGoogleUser
 };

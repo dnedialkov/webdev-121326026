@@ -38,3 +38,10 @@ One entry per agent session, newest at the bottom. Be honest: what went wrong is
   - **Зависимости:** Не са инсталирани или премахвани нови пакети в `package.json`.
   - **Променени тестове:** Тестовете не са променяни или олекотявани; всички съществуващи тестове остават непокътнати и минават успешно.
   - **Какво е запазено/махнато:** Запазено е цялостното разделяне на отговорностите (separation of concerns), като SQL транзакциите и заключването бяха изнесени в репозиторния слой, а бизнес правилата в сервизния слой. Никакъв код или тестове не са изтрити или компромисени.
+
+## 2026-10-28 · Add Google OAuth sign-in
+- Goal: Add a Google sign-in button and complete the OAuth callback at `/api/auth/google/callback`.
+- Delegated: None.
+- Checkpoints: `npm run coverage` passed, including 100% service coverage and the 80% overall line-coverage gate.
+- Went wrong: The first focused test run lacked Google client configuration in one test; the test setup was corrected and the full coverage command passed.
+- Changed by hand: Added state-checked Google OAuth, verified-email account matching/creation, secure session regeneration, callback setup documentation, and AC-15 tests. No dependencies or secrets were added.

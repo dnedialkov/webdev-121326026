@@ -1,11 +1,66 @@
 const express = require('express');
 const router = express.Router();
 const authService = require('../services/authService');
+const googleOAuthService = require('../services/googleOAuthService');
 const fs = require('fs');
 const path = require('path');
+const { randomBytes } = require('crypto');
 
 const loginHtmlPath = path.join(__dirname, '../views/login.html');
 const registerHtmlPath = path.join(__dirname, '../views/register.html');
+
+router.get('/api/auth/google', (req, res) => {
+  if (req.session?.user) {
+    return res.redirect('/events');
+  }
+
+  const state = randomBytes(32).toString('hex');
+  const baseUrl = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
+  const redirectUri = new URL('/api/auth/google/callback', baseUrl).toString();
+
+  try {
+    const authorizationUrl = googleOAuthService.getAuthorizationUrl(state, { redirectUri });
+    req.session.googleOAuthState = state;
+    res.redirect(authorizationUrl);
+  } catch (error) {
+    console.error(error);
+    res.status(503).send('Google sign-in is not available');
+  }
+});
+
+router.get('/api/auth/google/callback', async (req, res) => {
+  const expectedState = req.session?.googleOAuthState;
+  delete req.session?.googleOAuthState;
+  if (!expectedState || typeof req.query.state !== 'string' || req.query.state !== expectedState) {
+    return res.status(400).send('Google sign-in could not be verified');
+  }
+
+  if (req.query.error) {
+    return res.redirect('/login?error=' + encodeURIComponent('Google sign-in was cancelled'));
+  }
+  if (typeof req.query.code !== 'string' || !req.query.code) {
+    return res.redirect('/login?error=' + encodeURIComponent('Google sign-in failed'));
+  }
+
+  const baseUrl = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
+  const redirectUri = new URL('/api/auth/google/callback', baseUrl).toString();
+
+  try {
+    const profile = await googleOAuthService.getGoogleProfile(req.query.code, redirectUri);
+    const user = await authService.authenticateGoogleUser(profile.email);
+    req.session.regenerate((error) => {
+      if (error) {
+        console.error(error);
+        return res.status(500).send('Google sign-in could not be completed');
+      }
+      req.session.user = user;
+      res.redirect('/events');
+    });
+  } catch (error) {
+    console.error(error);
+    res.redirect('/login?error=' + encodeURIComponent('Google sign-in failed'));
+  }
+});
 
 router.get('/login', (req, res) => {
   if (req.session && req.session.user) {

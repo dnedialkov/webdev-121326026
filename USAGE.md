@@ -6,3 +6,4 @@ One row per agent session. In Gemini CLI, type `/stats` before you quit and copy
 |---|---|---|---|---|---|
 | 2026-10-21 | Gemini CLI (`gemini-3.5-flash-lite`; 10,144 cache reads) | 26,687 | 84 |  |  |
 | 2026-10-21 | Gemini CLI (`gemini-3.5-flash-lite`) | 45,000 | 250 |  |  |
+| 2026-10-28 | Copilot SDK | Not reported | Not reported | Not surfaced |  |

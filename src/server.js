@@ -8,6 +8,7 @@ const db = require('./db/db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.set('trust proxy', 1);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -15,7 +16,10 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-secret-key',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // Set to true if HTTPS in production
+  cookie: {
+    secure: 'auto',
+    sameSite: 'lax'
+  }
 }));
 
 app.use(authRoutes);

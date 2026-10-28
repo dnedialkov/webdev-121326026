@@ -14,6 +14,22 @@ By the end you hand in one working application: a backend and a frontend over a 
 
 The course setup page explains accounts, sign-in, free limits and what to do if something goes wrong.
 
+## Google sign-in
+
+Create a Google OAuth 2.0 **Web application** client. Add this exact authorized redirect URI in Google Cloud:
+
+```text
+https://webdev-121326026.onrender.com/api/auth/google/callback
+```
+
+For local development, also add:
+
+```text
+http://localhost:3000/api/auth/google/callback
+```
+
+Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `PUBLIC_BASE_URL` in the hosting provider's environment settings. On Render, set `PUBLIC_BASE_URL` to `https://webdev-121326026.onrender.com`. Never commit the client secret. The login page's **Continue with Google** button starts the OAuth flow, and Google returns to the callback URL above.
+
 ## What is already here
 
 | Path | What it is for |

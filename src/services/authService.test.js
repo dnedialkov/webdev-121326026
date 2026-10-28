@@ -103,3 +103,88 @@ test('registration hashes passwords and creates users with default or selected r
     ['organizer@example.com', 'secret:10', 'organizer']
   ]);
 });
+
+test('AC-15 Google sign-in reuses an existing account and its role', async (t) => {
+  const existingUser = {
+    id: 8,
+    email: 'organizer@example.com',
+    role: 'organizer',
+    password_hash: 'not-returned'
+  };
+  const findByEmail = t.mock.method(userRepo, 'findByEmail', async () => existingUser);
+  const hash = t.mock.method(bcrypt, 'hash', async () => {
+    throw new Error('Existing Google users must not be re-created');
+  });
+
+  assert.deepEqual(await authService.authenticateGoogleUser(existingUser.email), {
+    id: 8,
+    email: 'organizer@example.com',
+    role: 'organizer'
+  });
+  assert.equal(findByEmail.mock.callCount(), 1);
+  assert.equal(hash.mock.callCount(), 0);
+});
+
+test('AC-15 Google sign-in creates a member account with an unusable random password', async (t) => {
+  t.mock.method(userRepo, 'findByEmail', async () => null);
+  const hash = t.mock.method(bcrypt, 'hash', async (password, saltRounds) => {
+    assert.match(password, /^[0-9a-f]{64}$/);
+    assert.equal(saltRounds, 10);
+    return 'hashed-random-password';
+  });
+  const createUser = t.mock.method(userRepo, 'createUser', async (email, passwordHash, role) => ({
+    id: 9,
+    email,
+    role
+  }));
+
+  assert.deepEqual(await authService.authenticateGoogleUser('new@example.com'), {
+    id: 9,
+    email: 'new@example.com',
+    role: 'member'
+  });
+  assert.equal(hash.mock.callCount(), 1);
+  assert.deepEqual(createUser.mock.calls[0].arguments.slice(1), [
+    'hashed-random-password',
+    'member'
+  ]);
+});
+
+test('Google sign-in rejects missing email and propagates ordinary repository failures', async (t) => {
+  await assert.rejects(authService.authenticateGoogleUser(''), /verified Google email/);
+
+  t.mock.method(userRepo, 'findByEmail', async () => null);
+  t.mock.method(bcrypt, 'hash', async () => 'hash');
+  t.mock.method(userRepo, 'createUser', async () => {
+    throw new Error('database unavailable');
+  });
+  await assert.rejects(authService.authenticateGoogleUser('person@example.com'), /database unavailable/);
+});
+
+test('Google sign-in reloads an account created concurrently', async (t) => {
+  const existingUser = { id: 10, email: 'person@example.com', role: 'organizer' };
+  let lookupCount = 0;
+  const findByEmail = t.mock.method(userRepo, 'findByEmail', async () => {
+    lookupCount += 1;
+    return lookupCount === 1 ? null : existingUser;
+  });
+  t.mock.method(bcrypt, 'hash', async () => 'hash');
+  const duplicateError = Object.assign(new Error('duplicate email'), { code: '23505' });
+  t.mock.method(userRepo, 'createUser', async () => { throw duplicateError; });
+
+  assert.deepEqual(await authService.authenticateGoogleUser(existingUser.email), {
+    id: 10,
+    email: existingUser.email,
+    role: existingUser.role
+  });
+  assert.equal(findByEmail.mock.callCount(), 2);
+});
+
+test('Google sign-in rethrows a duplicate error if the account is still missing', async (t) => {
+  t.mock.method(userRepo, 'findByEmail', async () => null);
+  t.mock.method(bcrypt, 'hash', async () => 'hash');
+  const duplicateError = Object.assign(new Error('duplicate email'), { code: '23505' });
+  t.mock.method(userRepo, 'createUser', async () => { throw duplicateError; });
+
+  await assert.rejects(authService.authenticateGoogleUser('person@example.com'), (error) => error === duplicateError);
+});

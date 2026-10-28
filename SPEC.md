@@ -29,7 +29,7 @@ Club events
 ## Auth
 - Local: Email and bcrypt-hashed password
 - Provider: Google OAuth (`google`)
-- Linking: When logging in via OAuth, the system checks for an existing email and prompts for one-time password verification to link accounts.
+- Linking: Google OAuth requires a verified email. If that email matches an existing account, the user signs into that account; otherwise, a member account is created. No separate OTP step is used.
 
 ## MCP tools
 | Tool | What it does | Who may call it |
@@ -85,12 +85,14 @@ A request for signing up for an event (`POST /events/:id/signup`) flows through 
 - [AC-12] An organizer who attempts to update an event capacity to a number lower than its current registrations is refused with `400`, and neither the capacity nor the registrations in the database are changed.
 - [AC-13] An organizer who attempts to set an event date to a past date sees an error message stating the date has already passed, the request is refused with `400`, and the event date remains unchanged in the database.
 - [AC-14] An organizer who attempts to edit an event they do not own is refused with `403` and no changes occur in the database.
+- [AC-15] A visitor who signs in with Google using a verified email is redirected to `/events` with an authenticated session; an existing matching account keeps its role, and a new account is created as a member.
 
 ## Traceability
 <!-- Filled in from Exercise 3 onward: each AC id, and the test that names it. -->
 | Criterion | Test |
 | --- | --- |
 | AC-1 |  |
+| AC-15 | Google OAuth route and service tests |
 
 ## Spec vs result
 <!-- After the agent builds the slice: which criteria passed, which it missed or reinterpreted, and what you changed in this spec because of it. -->
