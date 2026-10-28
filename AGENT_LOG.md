@@ -26,3 +26,15 @@ One entry per agent session, newest at the bottom. Be honest: what went wrong is
 - Checkpoints: Tested login, event listing, signup/cancellation, event creation, and organizer deletion successfully via local server and PostgreSQL.
 - Went wrong: PostgreSQL service was not initially running in the codespace and needed to be started and seeded; bcrypt hash format for seed password required update.
 - Changed by hand: Created schema.sql, db connection, authentication and event service layers, routes, and HTML views.
+
+## 2026-10-22 · Architecture Documentation & Concurrency Race Condition Fix
+- Goal: Document architecture in SPEC.md, answer reviewer questions, and implement atomic database transaction locking (FOR UPDATE) to prevent signup race conditions.
+- Delegated: None.
+- Checkpoints: All automated tests pass successfully (`npm test`).
+- Went wrong: Initial signup check lacked row-level locking for concurrent signups.
+- Changed by hand: Updated `SPEC.md` under `## Architecture`, added `signupTransaction` in `src/db/eventRepo.js`, and updated `signupForEvent` in `src/services/eventService.js`.
+- **Какво направи агентът без моя поръчка:**
+  - **Допълнителни файлове:** Няма създадени нови файлове извън редакция на съществуващи (`SPEC.md`, `src/db/eventRepo.js`, `src/services/eventService.js`, `AGENT_LOG.md`).
+  - **Зависимости:** Не са инсталирани или премахвани нови пакети в `package.json`.
+  - **Променени тестове:** Тестовете не са променяни или олекотявани; всички съществуващи тестове остават непокътнати и минават успешно.
+  - **Какво е запазено/махнато:** Запазено е цялостното разделяне на отговорностите (separation of concerns), като SQL транзакциите и заключването бяха изнесени в репозиторния слой, а бизнес правилата в сервизния слой. Никакъв код или тестове не са изтрити или компромисени.

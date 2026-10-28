@@ -14,22 +14,7 @@ async function getUserRegistrations(userId) {
 }
 
 async function signupForEvent(userId, eventId) {
-  const event = await eventRepo.getEventById(eventId);
-  if (!event) {
-    return { success: false, error: 'Event not found' };
-  }
-
-  const existingRegistration = await eventRepo.getUserRegistration(userId, eventId);
-  if (existingRegistration) {
-    return { success: false, error: 'Already registered for this event' };
-  }
-
-  if (Number(event.free_places) <= 0) {
-    return { success: false, error: 'This event is full' };
-  }
-
-  const registration = await eventRepo.createRegistration(userId, eventId);
-  return { success: true, registration };
+  return await eventRepo.signupTransaction(userId, eventId);
 }
 
 async function cancelRegistration(userId, eventId) {
@@ -81,6 +66,35 @@ async function removeEvent(userId, eventId) {
   return { success: true };
 }
 
+async function generateEventSummary(title, description, httpClient = fetch) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  const modelName = process.env.MODEL_NAME || 'gemini-2.5-flash';
+
+  if (!apiKey) {
+    return { summary: description || title, tags: ['fallback', 'default'], source: 'fallback' };
+  }
+
+  try {
+    const res = await httpClient(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `Summarize and tag this event: ${title} - ${description}` }] }]
+      }),
+      signal: AbortSignal.timeout(5000)
+    });
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`);
+    }
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || description;
+    return { summary: text, tags: ['ai', 'polished'], source: 'ai' };
+  } catch (err) {
+    // AI service temporarily unavailable fallback heuristic default
+    return { summary: description || title, tags: ['fallback', 'default', 'heuristic'], source: 'fallback' };
+  }
+}
+
 module.exports = {
   listUpcomingEvents,
   getEventById,
@@ -89,5 +103,6 @@ module.exports = {
   cancelRegistration,
   createNewEvent,
   updateExistingEvent,
-  removeEvent
+  removeEvent,
+  generateEventSummary
 };

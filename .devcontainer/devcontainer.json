@@ -33,6 +33,7 @@
     "8000": { "label": "app (Python)" }
   },
   "postCreateCommand": "sudo apt-get update && sudo apt-get install -y --no-install-recommends sqlite3 && npm install -g @google/gemini-cli",
+  "postStartCommand": "sudo service postgresql start",
   "postAttachCommand": "echo 'Workspace ready. Start the agent with: gemini'",
   "customizations": {
     "vscode": {

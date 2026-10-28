@@ -47,8 +47,21 @@ Club events
   4. Organizer Event Management screen
 
 ## Architecture
-<!-- Exercise 3. One request traced through every layer, naming the file for each one,
-     plus one place where your own code does not match this layering. -->
+A request for signing up for an event (`POST /events/:id/signup`) flows through the layers as follows:
+
+**Forward Request Path:**
+1. **Route Handler:** `src/routes/events.js` (receives the HTTP POST request, validates session authentication, and invokes `eventService.signupForEvent`).
+2. **Service Layer:** `src/services/eventService.js` (executes business rules, capacity checks, and eligibility checks).
+3. **Data Access (Repository):** `src/db/eventRepo.js` (executes SQL queries against the database).
+4. **Database:** PostgreSQL database (`events` and `registrations` tables).
+
+**Backward Response / Client Rendering Path:**
+1. **Server Rendered HTML View:** `src/views/events.html` (receives updated event data and renders success/error message banners and action buttons).
+2. **Browser State & DOM:** Browser form submit state and document reload showing updated free places count and cancellation button.
+3. **Client REST / Form Action:** Form submission triggering the POST request to `/events/:id/signup`.
+
+**Layering Discrepancy:**
+`src/routes/events.js` directly performs HTML template string reading via `fs.readFileSync(eventsHtmlPath, 'utf8')` and string replacement rather than utilizing a separate view rendering engine. This was left as-is for simplicity in a lightweight server-rendered Vanilla JS application without adding external template dependency overhead.
 
 ## Acceptance criteria
 <!-- Every criterion carries an id. A test proves it by naming that id in its title, for example
